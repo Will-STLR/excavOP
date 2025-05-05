@@ -97,9 +97,6 @@ class MyGlRenderer : GLSurfaceView.Renderer {
 
         updateCamera()
 
-        time += 0.02f
-        prog.setTime(time)
-
         prog.use()
         vao.render()
 
