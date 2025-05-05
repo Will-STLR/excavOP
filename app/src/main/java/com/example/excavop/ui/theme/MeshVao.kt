@@ -1,0 +1,108 @@
+package com.example.excavop.ui.theme
+import android.opengl.GLES32
+import android.opengl.Matrix
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
+
+class MeshVao: GlVao {
+    private var vao: Int = 0
+    private val vertices = floatArrayOf(
+    )
+
+    override fun buildVao() {
+        val vaoTemp = IntArray(2)
+        GLES32.glGenVertexArrays(1, vaoTemp, 0)
+        vao = vaoTemp[0]
+        GLES32.glBindVertexArray(vao)
+
+        val vboTemp = IntArray(1)
+        GLES32.glGenBuffers(1, vboTemp, 0)
+        val vbo = vboTemp[0]
+
+        GLES32.glBindBuffer(GLES32.GL_ARRAY_BUFFER, vbo)
+        val tempBuffer = ByteBuffer.allocateDirect(36 * (3+4) * 4).order(ByteOrder.nativeOrder()).asFloatBuffer()
+        tempBuffer.put(vertices).position(0)
+
+        GLES32.glBufferData(GLES32.GL_ARRAY_BUFFER, 36 * (3+4) * 4, tempBuffer, GLES32.GL_STATIC_DRAW)
+        GLES32.glVertexAttribPointer(0, 3, GLES32.GL_FLOAT, false, 7*4, 0)
+        GLES32.glEnableVertexAttribArray(0)
+        GLES32.glVertexAttribPointer(1, 4, GLES32.GL_FLOAT, false, 7*4, 12)
+        GLES32.glEnableVertexAttribArray(1)
+
+        GLES32.glBindVertexArray(0) //Finished with this VAO
+    }
+
+    override fun render() {
+        GLES32.glBindVertexArray(vao)
+        GLES32.glDrawArrays(GLES32.GL_TRIANGLES, 0, 36)
+        GLES32.glBindVertexArray(0)
+    }
+}
+
+class MeshProg: GLProgram(vertexShaderCode, fragmentShaderCode) {
+    companion object {
+        private const val TAG = "MeshProg"
+        private val vertexShaderCode = """
+          #version 320 es
+          layout(location = 0) in vec3 vPosition;
+          layout(location = 1) in vec4 vColor;
+           
+          uniform mat4 uView;
+          uniform mat4 uProjection;
+                  
+          out vec4 color;
+            
+          void main() {
+            gl_Position = uProjection * uView * vec4(vPosition, 1.0f);
+            color = vColor; 
+          }  
+        """.trimIndent()
+        private val fragmentShaderCode = """
+           #version 320 es
+           precision mediump float;
+            
+           uniform float uTime;
+           out vec4 fragColor;
+           in vec4 color;
+          
+           void main() {
+            float sinWave = sin(uTime);
+            float amplitude = 0.2f;
+            fragColor = vec4(abs(sinWave), amplitude * sinWave+0.5, 0.0f, 1.0f);
+          }  
+        """.trimIndent()
+    }
+
+    private var mView: Int = -1
+    private var mProj: Int = -1
+    private var mTime: Int = -1
+
+    override fun buildProgram() {
+        super.buildProgram()
+
+        mView = GLES32.glGetUniformLocation(mProgram, "uView")
+        mProj = GLES32.glGetUniformLocation(mProgram, "uProjection")
+        mTime = GLES32.glGetUniformLocation(mProgram, "uTime")
+
+        assert(mView != -1)
+        assert(mProj != -1)
+        assert(mTime != -1)
+    }
+
+    //Functions for Uniforms
+    fun setViewMatrix(viewMat: FloatArray) {
+        assert(viewMat.size == 16)
+        val tempBufferView = ByteBuffer.allocateDirect(viewMat.size * 4).order(ByteOrder.nativeOrder()).asFloatBuffer()
+        tempBufferView.put(viewMat).position(0)
+        GLES32.glProgramUniformMatrix4fv(mProgram, mView, 1, false, tempBufferView)
+    }
+    fun setProjMatrix(projMat: FloatArray) {
+        assert(projMat.size == 16)
+        val tempBufferProjection = ByteBuffer.allocateDirect(projMat.size * 4).order(ByteOrder.nativeOrder()).asFloatBuffer()
+        tempBufferProjection.put(projMat).position(0)
+        GLES32.glProgramUniformMatrix4fv(mProgram, mProj, 1, false, tempBufferProjection)
+    }
+    fun setTime(time: Float) {
+        GLES32.glProgramUniform1f(mProgram, mTime, time)
+    }
+}
