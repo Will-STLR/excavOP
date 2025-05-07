@@ -69,6 +69,8 @@ class MyGlRenderer : GLSurfaceView.Renderer {
     val vao = MeshVao()
     val edgeProg = EdgeProg()
     val edgeVao = CubeEdgesVao()
+    val floorVao = FloorVao()
+    val floorProg = FloorProg()
 
     val projMatrix = FloatArray(16)
     val viewMatrix = FloatArray(16)
@@ -82,21 +84,23 @@ class MyGlRenderer : GLSurfaceView.Renderer {
         enableBlend()
         prog.buildProgram()
         edgeProg.buildProgram()
+        floorProg.buildProgram()
 
         GLES32.glClearColor(1.0f, 0.0f, 0.0f, 0.0f)
 
         Matrix.perspectiveM(projMatrix, 0, 50.0f, 1200/2000f, 0.5f, 20.0f)
         prog.setProjMatrix(projMatrix)
         edgeProg.setProjMatrix(projMatrix)
+        floorProg.setProjMatrix(projMatrix)
 
         vao.buildVao()
         edgeVao.buildVao()
+        floorVao.buildVao()
     }
     override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {
         GLES32.glViewport(0, 0, width, height)
     }
-    override fun onDrawFrame(gl: GL10?) {
-        GLES32.glDepthFunc(GLES32.GL_LESS)
+    override fun onDrawFrame(gl: GL10?) { GLES32.glDepthFunc(GLES32.GL_LESS)
         GLES32.glClearColor(0.0f, 0.0f, 1.0f, 0.0f)
         GLES32.glClear(GLES32.GL_COLOR_BUFFER_BIT or GLES32.GL_DEPTH_BUFFER_BIT)
 
@@ -108,9 +112,16 @@ class MyGlRenderer : GLSurfaceView.Renderer {
         prog.use()
         vao.render()
 
-        GLES32.glDepthFunc(GLES32.GL_LESS)
+        GLES32.glDisable(GLES32.GL_DEPTH_TEST)
+        floorProg.use()
+        floorVao.render()
+        GLES32.glEnable(GLES32.GL_DEPTH_TEST)
+
+        GLES32.glDisable(GLES32.GL_DEPTH_TEST)
         edgeProg.use()
         edgeVao.render()
+        GLES32.glEnable(GLES32.GL_DEPTH_TEST)
+
 
         GLES32.glUseProgram(0)
         GLES32.glBindVertexArray(0)
@@ -141,10 +152,11 @@ class MyGlRenderer : GLSurfaceView.Renderer {
         )
         prog.setViewMatrix(viewMatrix)
         edgeProg.setViewMatrix(viewMatrix)
+        floorProg.setViewMatrix(viewMatrix)
     }
     private fun enableBlend() {
         GLES32.glEnable(GLES32.GL_DEPTH_TEST)
-//          GLES32.glEnable(GLES32.GL_BLEND)
-//          GLES32.glBlendFunc(GLES32.GL_SRC_ALPHA, GLES32.GL_ONE_MINUS_SRC_ALPHA)
+        GLES32.glEnable(GLES32.GL_BLEND)
+        GLES32.glBlendFunc(GLES32.GL_SRC_ALPHA, GLES32.GL_ONE_MINUS_SRC_ALPHA)
     }
 }

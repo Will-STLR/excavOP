@@ -4,46 +4,18 @@ import android.opengl.GLES32
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
-class CubeEdgesVao: GlVao {
-    private var vao: Int = 0
-    private var cubeEdges = floatArrayOf(
-        0f, 0f, 0f,   0f, 0f, 0f, 1f,
-        1f, 0f, 0f,   0f, 0f, 0f, 1f,
+class FloorVao: GlVao {
+    private var vao:  Int = 0
+    private val floor = floatArrayOf(
+        // Dreieck 1
+        0f, 0f, 0.5f,   1f, 0f, 0f, 0.3f,  // P0: Weiß
+        1f, 0f, 0.5f,   1f, 0f, 0f, 0.3f,  // P1
+        1f, 1f, 0.5f,   1f, 0f, 0f, 0.3f,  // P2
 
-        1f, 0f, 0f,   0f, 0f, 0f, 1f,
-        1f, 1f, 0f,   0f, 0f, 0f, 1f,
-
-        1f, 1f, 0f,   0f, 0f, 0f, 1f,
-        0f, 1f, 0f,   0f, 0f, 0f, 1f,
-
-        0f, 1f, 0f,   0f, 0f, 0f, 1f,
-        0f, 0f, 0f,   0f, 0f, 0f, 1f,
-
-        // Rückseite
-        0f, 0f, 1f,   0f, 0f, 0f, 1f,
-        1f, 0f, 1f,   0f, 0f, 0f, 1f,
-
-        1f, 0f, 1f,   0f, 0f, 0f, 1f,
-        1f, 1f, 1f,   0f, 0f, 0f, 1f,
-
-        1f, 1f, 1f,   0f, 0f, 0f, 1f,
-        0f, 1f, 1f,   0f, 0f, 0f, 1f,
-
-        0f, 1f, 1f,   0f, 0f, 0f, 1f,
-        0f, 0f, 1f,   0f, 0f, 0f, 1f,
-
-        // Verbindungen Vorder- & Rückseite
-        0f, 0f, 0f,   1f, 1f, 1f, 1f,
-        0f, 0f, 1f,   1f, 1f, 1f, 1f,
-
-        1f, 0f, 0f,   1f, 1f, 1f, 1f,
-        1f, 0f, 1f,   1f, 1f, 1f, 1f,
-
-        1f, 1f, 0f,   1f, 1f, 1f, 1f,
-        1f, 1f, 1f,   1f, 1f, 1f, 1f,
-
-        0f, 1f, 0f,   1f, 1f, 1f, 1f,
-        0f, 1f, 1f,   1f, 1f, 1f, 1f,
+        // Dreieck 2
+        0f, 0f, 0.5f,   1f, 0f, 0f, 0.3f,  // P0
+        1f, 1f, 0.5f,   1f, 0f, 0f, 0.3f,  // P2
+        0f, 1f, 0.5f,   1f, 0f, 0f, 0.3f   // P3
     )
 
     override fun buildVao() {
@@ -58,11 +30,11 @@ class CubeEdgesVao: GlVao {
 
         GLES32.glBindBuffer(GLES32.GL_ARRAY_BUFFER, vbo)
         //first para: vertices, second: dim(3 for each vertex and 4 for color), third: sizeof(float)
-        val tempBuffer = ByteBuffer.allocateDirect(24 * (3+4) * 4).order(ByteOrder.nativeOrder()).asFloatBuffer()
-        tempBuffer.put(cubeEdges).position(0)
+        val tempBuffer = ByteBuffer.allocateDirect(6 * (3+4) * 4).order(ByteOrder.nativeOrder()).asFloatBuffer()
+        tempBuffer.put(floor).position(0)
 
         //we need for each layout an attribpointer
-        GLES32.glBufferData(GLES32.GL_ARRAY_BUFFER, 24 * (3+4) * 4, tempBuffer, GLES32.GL_STATIC_DRAW)
+        GLES32.glBufferData(GLES32.GL_ARRAY_BUFFER,6 * (3+4) * 4, tempBuffer, GLES32.GL_STATIC_DRAW)
         GLES32.glVertexAttribPointer(0, 3, GLES32.GL_FLOAT, false, 7*4, 0)
         GLES32.glEnableVertexAttribArray(0)
         GLES32.glVertexAttribPointer(1, 4, GLES32.GL_FLOAT, false, 7*4, 12)
@@ -73,33 +45,38 @@ class CubeEdgesVao: GlVao {
 
     override fun render() {
         GLES32.glBindVertexArray(vao)
-        GLES32.glDrawArrays(GLES32.GL_LINES, 0, 24)
+        GLES32.glDrawArrays(GLES32.GL_TRIANGLES, 0, 6)
         GLES32.glBindVertexArray(0)
     }
 }
-class EdgeProg: GLProgram(edgeVertexShaderCode, edgeFragmentShaderCode) {
+class FloorProg: GLProgram(floorVertexShaderCode, floorFragmentShaderCode) {
     companion object {
-        private const val TAG = "EdgeProg"
-        private val edgeVertexShaderCode = """
+        private const val TAG = "FloorProg"
+        private val floorVertexShaderCode = """
              #version 320 es
              layout(location = 0) in vec3 vPosition;
+             layout(location = 1) in vec4 vColor; 
              
              uniform mat4 uView;
              uniform mat4 uProjection;
              
+             out vec4 color; 
+                 
              void main() {
                 gl_Position = uProjection * uView * vec4(vPosition, 1.0); 
-             }
+                color = vColor;
+             } 
         """.trimIndent()
-        private val edgeFragmentShaderCode = """
+        private val floorFragmentShaderCode = """
              #version 320 es
              precision mediump float;
              
+             in vec4 color;
              out vec4 fragColor;
              
              void main() {
-                fragColor = vec4(1.0); 
-             }
+                fragColor = color; 
+             } 
         """.trimIndent()
     }
 
