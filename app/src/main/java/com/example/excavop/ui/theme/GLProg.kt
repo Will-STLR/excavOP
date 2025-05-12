@@ -22,16 +22,19 @@ fun checkProgramLinking(program: Int) {
 open class GLProgram(
     private val vertexShaderCode: String,
     private val fragmentShaderCode: String,
+    private val geometryShaderCode: String? = null
 ) {
     protected var mProgram: Int = 0
 
     open fun buildProgram() {
         val vertShader = loadShader(GLES32.GL_VERTEX_SHADER, vertexShaderCode)
         val fragShader = loadShader(GLES32.GL_FRAGMENT_SHADER, fragmentShaderCode)
+        val geomShader: Int? = if(geometryShaderCode == null) null else loadShader(GLES32.GL_GEOMETRY_SHADER, geometryShaderCode)
 
         mProgram = GLES32.glCreateProgram()
         GLES32.glAttachShader(mProgram, vertShader)
         GLES32.glAttachShader(mProgram, fragShader)
+        if (geomShader != null) GLES32.glAttachShader(mProgram, geomShader)
         GLES32.glLinkProgram(mProgram)
         checkProgramLinking(mProgram)
     }
