@@ -116,7 +116,9 @@ class EdgeProg: GLProgram(edgeVertexShaderCode, edgeFragmentShaderCode, edgeGeom
                 z.y -= 0.2f;
                 gl_Position = z;
                 EmitVertex();
-                
+
+                // Nach jedem Emit, haben wir ein festen Index fuer einen Vertex, wenn wir mit einem Geometry Shader ein Rechteck bauen wollen
+                // Dann nimmt der Geometry Shader immer die letzten 2 vertices, deshalb muss man sich eine kleine Zeichnung machen.
                 vec4 y = gl_in[1].gl_Position;
                 y.y -= 0.2f;
                 gl_Position = y;
