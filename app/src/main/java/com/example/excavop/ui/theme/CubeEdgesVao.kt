@@ -77,7 +77,7 @@ class CubeEdgesVao: GlVao {
         GLES32.glBindVertexArray(0)
     }
 }
-class EdgeProg: GLProgram(edgeVertexShaderCode, edgeFragmentShaderCode) {
+class EdgeProg: GLProgram(edgeVertexShaderCode, edgeFragmentShaderCode, edgeGeometryShaderCode) {
     companion object {
         private const val TAG = "EdgeProg"
         private val edgeVertexShaderCode = """
@@ -86,7 +86,7 @@ class EdgeProg: GLProgram(edgeVertexShaderCode, edgeFragmentShaderCode) {
              
              uniform mat4 uView;
              uniform mat4 uProjection;
-             
+              
              void main() {
                 gl_Position = uProjection * uView * vec4(vPosition, 1.0); 
              }
@@ -99,6 +99,28 @@ class EdgeProg: GLProgram(edgeVertexShaderCode, edgeFragmentShaderCode) {
              
              void main() {
                 fragColor = vec4(1.0); 
+             }
+        """.trimIndent()
+        private val edgeGeometryShaderCode = """
+             #version 320 es
+             layout(lines) in;
+             layout(triangle_strip, max_vertices = 4) out;
+             
+             void main () {
+                gl_Position = gl_in[0].gl_Position;
+                EmitVertex();
+                gl_Position = gl_in[1].gl_Position;
+                EmitVertex();
+                
+                vec4 z = gl_in[0].gl_Position;
+                z.y -= 0.2f;
+                gl_Position = z;
+                EmitVertex();
+                
+                vec4 y = gl_in[1].gl_Position;
+                y.y -= 0.2f;
+                gl_Position = y;
+                EmitVertex();
              }
         """.trimIndent()
     }
