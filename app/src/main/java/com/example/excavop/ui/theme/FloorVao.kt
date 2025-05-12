@@ -49,7 +49,7 @@ class FloorVao: GlVao {
         GLES32.glBindVertexArray(0)
     }
 }
-class FloorProg: GLProgram(floorVertexShaderCode, floorFragmentShaderCode) {
+class FloorProg: GLProgram(floorVertexShaderCode, floorFragmentShaderCode, floorGeometryShaderCode) {
     companion object {
         private const val TAG = "FloorProg"
         private val floorVertexShaderCode = """
@@ -71,12 +71,28 @@ class FloorProg: GLProgram(floorVertexShaderCode, floorFragmentShaderCode) {
              #version 320 es
              precision mediump float;
              
-             in vec4 color;
+             in vec4 gColor;
              out vec4 fragColor;
              
              void main() {
-                fragColor = color; 
+                fragColor = gColor; 
              } 
+        """.trimIndent()
+        private val floorGeometryShaderCode = """
+              #version 320 es
+              layout(triangles) in;
+              layout(triangle_strip, max_vertices = 3) out;
+                
+              in vec4 color[3];
+              out vec4 gColor; 
+              
+              void main() {
+                for(int i=0; i<3; i++) {
+                    gl_Position = gl_in[i].gl_Position; 
+                    gColor = color[i]; 
+                    EmitVertex();
+                }
+              }
         """.trimIndent()
     }
 
